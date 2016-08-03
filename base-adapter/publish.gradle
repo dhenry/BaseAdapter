@@ -1,0 +1,75 @@
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+def libName = 'baseadapter'
+def libGroup = 'com.dhenry.' + libName
+def libSite = 'https://github.com/dhenry/' + libName
+def libGit = libSite + '.git'
+def libTracker = libSite + '/issues'
+def libDesc = "Replacement for all your custom built ReyclerView Adapters"
+def libTags = ['android', 'recyclerview', 'adapter', 'data binding']
+
+group = libGroup
+version = '1'
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+bintray {
+    user = properties.getProperty('bintray.user')
+    key = properties.getProperty('bintray.key')
+    configurations = ['archives']
+    pkg {
+        repo = 'maven'
+        name = libName
+        desc = libDesc
+        websiteUrl = libSite
+        issueTrackerUrl = libTracker
+        vcsUrl = libGit
+        licenses = ['Apache-2.0']
+        labels = libTags
+        publish = true
+        publicDownloadNumbers = true
+    }
+}
+
+install {
+    repositories.mavenInstaller {
+        pom.project {
+            packaging 'aar'
+            groupId libGroup
+            artifactId libName
+            name libName
+            description libDesc
+            url libSite
+
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                }
+            }
+            developers {
+                developer {
+                    id 'dhenry'
+                    name 'David Henry'
+                    email 'dave.m.henry.1@gmail.com'
+                }
+            }
+            scm {
+                connection libGit
+                developerConnection libGit
+                url libSite
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+artifacts {
+    archives sourcesJar
+}
