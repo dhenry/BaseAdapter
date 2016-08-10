@@ -586,10 +586,12 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     }
 
     public void deleteSelectedItems(@NonNull OnItemDeletedListener<T> callback) {
-        callback.onItemsDeleted(selectedItems);
-        list.removeAll(selectedItems);
-        selectedItems.clear();
-        notifyDataSetChanged();
+        if (!isNullOrEmpty(selectedItems)){
+            callback.onItemsDeleted(selectedItems);
+            list.removeAll(selectedItems);
+            selectedItems.clear();
+            notifyDataSetChanged();
+        }
     }
 
     private Boolean isForDataBinding(List<T> payloads) {
