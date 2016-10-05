@@ -497,7 +497,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     @Override
     public void onAttachedToRecyclerView(RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
-        if (recyclerView == null && list instanceof ObservableList) {
+        if (recyclerView != null && list instanceof ObservableList) {
             ((ObservableList<T>) list).addOnListChangedCallback(onListChangedCallback);
         }
         this.recyclerView = recyclerView;

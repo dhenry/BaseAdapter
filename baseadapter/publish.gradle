@@ -10,7 +10,7 @@ def libDesc = "Replacement for all your custom built ReyclerView Adapters"
 def libTags = ['android', 'recyclerview', 'adapter', 'data binding']
 
 group = libGroup
-version = '1'
+version = '1.0.1'
 
 Properties properties = new Properties()
 properties.load(project.rootProject.file('local.properties').newDataInputStream())
