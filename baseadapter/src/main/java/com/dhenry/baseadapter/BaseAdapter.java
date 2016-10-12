@@ -589,8 +589,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
         if (!isNullOrEmpty(selectedItems)){
             callback.onItemsDeleted(selectedItems);
             list.removeAll(selectedItems);
-            selectedItems.clear();
-            notifyDataSetChanged();
+            disableSelectionMode();
         }
     }
 
