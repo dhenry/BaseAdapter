@@ -88,8 +88,8 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     private WeakReferenceOnListChangedCallback onListChangedCallback = new WeakReferenceOnListChangedCallback(this);
     private RecyclerView recyclerView = null;
     private LayoutInflater inflater = null;
+    private List<T> selectedItems;
     private final List<T> list;
-    private final List<T> selectedItems;
     private final Map<Class, Pair<Integer, Integer>> map;
     private final OnBindListener<T> onBindListener;
     private final SparseArray<OnClickListener<T>> clickListeners;
@@ -524,7 +524,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     }
 
     public void disableSelectionMode() {
-        selectedItems.clear();
+        selectedItems = new ArrayList<>();
         enableSelectionMode(false);
         updateToolbar();
     }
