@@ -524,6 +524,12 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     }
 
     public void disableSelectionMode() {
+        for (T item : selectedItems) {
+            int index = list.indexOf(item);
+            if (index != -1) {
+                notifyItemChanged(index);
+            }
+        }
         selectedItems = new ArrayList<>();
         enableSelectionMode(false);
         updateToolbar();
@@ -534,7 +540,6 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     }
 
     private BaseAdapter<T> enableSelectionMode(boolean selectionModeEnabled) {
-        notifyDataSetChanged();
         isSelectionModeActivated = selectionModeEnabled;
         if (isSelectionModeActivated && !isEnteringSelectionMode) {
             isEnteringSelectionMode = true;
@@ -579,16 +584,22 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
             int index = list.indexOf(itemToSelect);
             if (index != -1) {
                 selectedItems.add(list.get(index));
+                notifyItemChanged(index);
             }
         }
         enableSelectionMode(true);
-        notifyDataSetChanged();
     }
 
     public void deleteSelectedItems(@NonNull OnItemDeletedListener<T> callback) {
         if (!isNullOrEmpty(selectedItems)){
             callback.onItemsDeleted(selectedItems);
-            list.removeAll(selectedItems);
+            for (T item : selectedItems) {
+                int index = list.indexOf(item);
+                if (index != -1) {
+                    list.remove(index);
+                    notifyItemRemoved(index);
+                }
+            }
             disableSelectionMode();
         }
     }
@@ -644,7 +655,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
         @Override
         public void onItemRangeMoved(ObservableList<T> list, int from, int to, int count) {
             for (int i = 0; i < count; i++) {
-                notifyItemMoved(from + i, to + i);
+                getAdapter().notifyItemMoved(from + i, to + i);
             }
         }
 
