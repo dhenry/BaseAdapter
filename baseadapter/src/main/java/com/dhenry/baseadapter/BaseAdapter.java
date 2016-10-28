@@ -104,6 +104,8 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     private boolean isEnteringSelectionMode = false;
     private final boolean isSelectionModeEnabled;
     private final WeakReference<Toolbar> toolbarRef;
+    private T previouslyClickedItem;
+    private View previouslyClickedView;
 
     private BaseAdapter(List<T> list, Map<Class, Pair<Integer, Integer>> map,
                         OnBindListener<T> onBindListener,
@@ -295,8 +297,6 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     class ViewHolder extends RecyclerView.ViewHolder {
 
         private ViewDataBinding binding;
-        private T previouslyClickedItem;
-        private View previouslyClickedView;
 
         public ViewHolder(ViewDataBinding binding) {
             super(binding.getRoot());
