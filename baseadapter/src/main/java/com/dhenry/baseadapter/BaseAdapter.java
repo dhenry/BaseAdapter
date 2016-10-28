@@ -62,6 +62,10 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
         void onClick(T item, View view, int position);
     }
 
+    public interface PreviousItemClickListener<T> {
+        void onClick(T previouslyClickedItem, View view, int position);
+    }
+
     public interface OnLongClickListener<T> {
         void onLongClick(T item, View view, int position);
     }
@@ -95,6 +99,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     private final SparseArray<OnClickListener<T>> clickListeners;
     private final SparseArray<OnLongClickListener<T>> longClickListeners;
     private final SelectionModeOnClickListener<T> selectionModeClickListener;
+    private final PreviousItemClickListener<T> previousItemClickListener;
     private boolean isSelectionModeActivated = false;
     private boolean isEnteringSelectionMode = false;
     private final boolean isSelectionModeEnabled;
@@ -106,7 +111,8 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
                         SparseArray<OnLongClickListener<T>> longClickListeners,
                         SelectionModeOnClickListener<T> selectionModeClickListener,
                         boolean isSelectionModeEnabled,
-                        WeakReference<Toolbar> toolbarRef, List<T> selectedItems) {
+                        WeakReference<Toolbar> toolbarRef, List<T> selectedItems,
+                        PreviousItemClickListener<T> previousItemClickListener) {
 
         this.list = list;
         this.selectedItems = new ArrayList<>();
@@ -115,6 +121,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
         this.clickListeners = clickListeners;
         this.longClickListeners = longClickListeners;
         this.selectionModeClickListener = selectionModeClickListener;
+        this.previousItemClickListener = previousItemClickListener;
         this.isSelectionModeEnabled = isSelectionModeEnabled;
         this.toolbarRef = toolbarRef;
         selectItems(selectedItems);
@@ -151,6 +158,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
         private SparseArray<OnClickListener<T>> clickListenerMap = new SparseArray<>();
         private SparseArray<OnLongClickListener<T>> longClickListenerMap = new SparseArray<>();
         private SelectionModeOnClickListener<T> selectionModeClickListener;
+        private PreviousItemClickListener<T> previousItemClickListener;
 
         public Builder<T> map(Class clazz, @LayoutRes int layout, int variable) {
             map.put(clazz, new Pair<>(layout, variable));
@@ -178,6 +186,17 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
          */
         public Builder<T> onClickListener(OnClickListener<T> listener) {
             clickListenerMap.put(DEFAULT_LISTENER_INDEX, listener);
+            return this;
+        }
+
+        /**
+         * Click listener that will be bound to the view. Provides the previous item clicked.
+         *
+         * @param listener the listener
+         * @return the builder
+         */
+        public Builder<T> previousItemClickListener(PreviousItemClickListener<T> listener) {
+            previousItemClickListener = listener;
             return this;
         }
 
@@ -248,7 +267,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
         public BaseAdapter<T> into(RecyclerView recyclerView) {
             adapter = new BaseAdapter<>(list, map, onBind, clickListenerMap,
                     longClickListenerMap, selectionModeClickListener, isSelectionModeEnabled, toolbarRef,
-                    selectedItems);
+                    selectedItems, previousItemClickListener);
             recyclerView.setAdapter(adapter);
             return adapter;
         }
@@ -276,6 +295,8 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     class ViewHolder extends RecyclerView.ViewHolder {
 
         private ViewDataBinding binding;
+        private T previouslyClickedItem;
+        private View previouslyClickedView;
 
         public ViewHolder(ViewDataBinding binding) {
             super(binding.getRoot());
@@ -337,6 +358,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
                         if (selectionModeClickListener != null) {
                             selectionModeClickListener.refreshViewState();
                         }
+                        firePreviousItemClickListener(item, view);
                     } else {
                         if (isNullOrEmpty(clickListeners)) return;
 
@@ -344,6 +366,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
                             final View viewForListener = ViewHolder.this.getViewForListener(clickListeners.keyAt(i), view);
                             if (viewForListener == view) {
                                 clickListeners.valueAt(i).onClick(item, viewForListener, position);
+                                firePreviousItemClickListener(item, viewForListener);
                             }
                         }
                     }
@@ -361,7 +384,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
          * @param view     the view in question
          * @param position the adapter position
          */
-        private void setMultiSelectModeLongClickListener(View view, final int position) {
+        private void setMultiSelectModeLongClickListener(final View view, final int position) {
             view.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View LongClickedView) {
@@ -372,6 +395,9 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
                     updateToolbar();
                     if (selectionModeClickListener != null) {
                         selectionModeClickListener.refreshViewState();
+                    }
+                    if (position != RecyclerView.NO_POSITION) {
+                        firePreviousItemClickListener(list.get(position), view);
                     }
                     return true;
                 }
@@ -398,9 +424,23 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
                         @Override
                         public void onClick(View view1) {
                             clickListeners.valueAt(index).onClick(item, viewForListener, position);
+                            firePreviousItemClickListener(item, viewForListener);
                         }
                     });
                 }
+            }
+        }
+
+        private void firePreviousItemClickListener(T item, View view) {
+            if (previousItemClickListener != null) {
+                if (previouslyClickedItem != null && previouslyClickedView != null) {
+                    int index = list.indexOf(previouslyClickedItem);
+                    if (index != -1) {
+                        previousItemClickListener.onClick(previouslyClickedItem, previouslyClickedView, index);
+                    }
+                }
+                previouslyClickedItem = item;
+                previouslyClickedView = view;
             }
         }
 
@@ -424,6 +464,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
                         @Override
                         public boolean onLongClick(View view1) {
                             clickListeners.valueAt(index).onLongClick(item, viewForListener, position);
+                            firePreviousItemClickListener(item, viewForListener);
                             return true;
                         }
                     });
@@ -591,14 +632,19 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     }
 
     public void deleteSelectedItems(@NonNull OnItemDeletedListener<T> callback) {
-        if (!isNullOrEmpty(selectedItems)){
+        if (!isNullOrEmpty(selectedItems)) {
             callback.onItemsDeleted(selectedItems);
+            int minIndex = -1;
             for (T item : selectedItems) {
                 int index = list.indexOf(item);
                 if (index != -1) {
+                    minIndex = index;
                     list.remove(index);
                     notifyItemRemoved(index);
                 }
+            }
+            if (minIndex > -1) {
+                notifyItemRangeChanged(minIndex, list.size());
             }
             disableSelectionMode();
         }
