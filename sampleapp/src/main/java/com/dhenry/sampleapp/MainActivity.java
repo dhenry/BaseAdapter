@@ -6,8 +6,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.ViewGroup;
 
 import com.dhenry.baseadapter.BaseAdapter;
+import com.dhenry.baseadapter.Function;
 import com.dhenry.sampleapp.model.SimpleItem;
 import com.dhenry.sampleapp.model.SimpleListItem;
 
@@ -21,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final List<Object> sampleData = getSampleData();
+        final List<SimpleItem> sampleData = getSampleData();
         final RecyclerView recyclerView = (RecyclerView)findViewById(R.id.recycler_view);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -34,6 +36,14 @@ public class MainActivity extends AppCompatActivity {
 //                .enableSelectionMode()
 //                .selectionModeClickListener()
 //                .onBindListener()
+                // viewType implementation!
+                .map(SimpleItem.class, new int[]{R.layout.item_text, R.layout.item_text}, BR.simpleItem,
+                        new Function<SimpleItem, Integer, Integer>() {
+                            @Override
+                            public Integer getViewType(SimpleItem o, Integer index) {
+                                return 0;
+                            }
+                        })
                 .into(recyclerView);
     }
 
@@ -47,8 +57,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @NonNull
-    private List<Object> getSampleData() {
-        List<Object> sampleData = new ArrayList<>();
+    private List<SimpleItem> getSampleData() {
+        List<SimpleItem> sampleData = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             if (i % 2 == 0) {
                 sampleData.add(new SimpleItem(i));

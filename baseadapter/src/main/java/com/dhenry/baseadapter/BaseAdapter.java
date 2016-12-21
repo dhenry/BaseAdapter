@@ -94,7 +94,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     private LayoutInflater inflater = null;
     private List<T> selectedItems;
     private final List<T> list;
-    private final Map<Class, Pair<Integer, Integer>> map;
+    private final Map<Class, LayoutBindingInfo<T>> map;
     private final OnBindListener<T> onBindListener;
     private final SparseArray<OnClickListener<T>> clickListeners;
     private final SparseArray<OnLongClickListener<T>> longClickListeners;
@@ -107,7 +107,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     private T previouslyClickedItem;
     private View previouslyClickedView;
 
-    private BaseAdapter(List<T> list, Map<Class, Pair<Integer, Integer>> map,
+    private BaseAdapter(List<T> list, Map<Class, LayoutBindingInfo<T>> map,
                         OnBindListener<T> onBindListener,
                         SparseArray<OnClickListener<T>> clickListeners,
                         SparseArray<OnLongClickListener<T>> longClickListeners,
@@ -155,7 +155,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
             this.list = list;
         }
 
-        private Map<Class, Pair<Integer, Integer>> map = new HashMap<>();
+        private Map<Class, LayoutBindingInfo<T>> map = new HashMap<>();
         private OnBindListener<T> onBind = null;
         private SparseArray<OnClickListener<T>> clickListenerMap = new SparseArray<>();
         private SparseArray<OnLongClickListener<T>> longClickListenerMap = new SparseArray<>();
@@ -163,7 +163,23 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
         private PreviousItemClickListener<T> previousItemClickListener;
 
         public Builder<T> map(Class clazz, @LayoutRes int layout, int variable) {
-            map.put(clazz, new Pair<>(layout, variable));
+            map.put(clazz, new LayoutBindingInfo<T>(layout, variable));
+            return this;
+        }
+
+        /**
+         * ViewType implementation. Provide a function that takes in one object in your list and determines
+         * which layout in your input array to use.
+         *
+         * @param clazz the data model class
+         * @param layouts An array of layouts that may be applied to objects of type {@param clazz}.
+         * @param variable the data binding variable.
+         * @param viewTypeFunction a function that determines which layout to use for each object in the input list
+         * @return the builder object
+         */
+        public Builder<T> map(Class clazz, @LayoutRes int[] layouts, int variable,
+                              @NonNull Function<T, Integer, Integer> viewTypeFunction) {
+            map.put(clazz, new LayoutBindingInfo<>(layouts, variable, viewTypeFunction));
             return this;
         }
 
@@ -327,7 +343,7 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
         }
 
         private int getVariableForType(int position) {
-            return map.get(list.get(position).getClass()).second;
+            return map.get(list.get(position).getClass()).getBindingVariable();
         }
 
         /**
@@ -525,7 +541,8 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     @Override
     public int getItemViewType(int position) {
         if (map != null) {
-            Pair<Integer, Integer> viewType = map.get(list.get(position).getClass());
+            final T dataModel = list.get(position);
+            Pair<Integer, Integer> viewType = map.get(dataModel.getClass()).getLayoutBindingVariablePair(dataModel, position);
             if (viewType == null) {
                 throw new RuntimeException("Invalid viewType at position " + position);
             }
