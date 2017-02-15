@@ -623,11 +623,6 @@ public class BaseAdapter<T> extends RecyclerView.Adapter<BaseAdapter.ViewHolder>
     private void addOnRebindCallback(ViewDataBinding viewDataBinding, final RecyclerView recyclerView, final int position) {
         viewDataBinding.addOnRebindCallback(new OnRebindCallback() {
             @Override
-            public boolean onPreBind(ViewDataBinding binding) {
-                return recyclerView != null && recyclerView.isComputingLayout();
-            }
-
-            @Override
             public void onCanceled(ViewDataBinding binding) {
                 if (recyclerView == null || recyclerView.isComputingLayout()) return;
                 if (position != RecyclerView.NO_POSITION)
